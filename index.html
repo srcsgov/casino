@@ -5,14 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CasinoCHUUK - The Ultimate Bet</title>
     <style>
-        @keyframes flash {
-            0% { background-color: black; color: white; }
-            50% { background-color: gold; color: black; }
-            100% { background-color: black; color: white; }
-        }
         body {
             font-family: Arial, sans-serif;
-            background-color: black;
+            background-color: #222;
             color: white;
             text-align: center;
             margin: 0;
@@ -22,16 +17,14 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            animation: flash 2s infinite;
-            position: relative;
         }
         .container {
             width: 80%;
             max-width: 500px;
             padding: 20px;
-            background: rgba(255, 255, 255, 0.1);
+            background: #333;
             border-radius: 15px;
-            box-shadow: 0 0 15px rgba(255, 215, 0, 0.8);
+            box-shadow: 0 0 15px rgba(255, 255, 255, 0.2);
         }
         input, button {
             padding: 15px;
@@ -42,119 +35,243 @@
             width: 80%;
         }
         button {
-            background-color: gold;
-            color: black;
+            background-color: #444;
+            color: white;
             cursor: pointer;
             font-weight: bold;
         }
         button:hover {
-            background-color: white;
-        }
-        .hidden-card {
-            background-color: black;
-            color: black;
-            padding: 5px;
-            border-radius: 5px;
-            display: inline-block;
+            background-color: #666;
         }
         .side-tab {
             position: absolute;
             top: 20px;
             right: 20px;
-            background: rgba(255, 215, 0, 0.8);
+            background: #444;
             padding: 15px;
             border-radius: 10px;
             font-weight: bold;
             color: limegreen;
         }
+        .tile {
+            width: 50px;
+            height: 50px;
+            margin: 5px;
+            display: inline-block;
+            background-color: #555;
+            border-radius: 10px;
+            cursor: pointer;
+        }
+        .tile.revealed {
+            background-color: #777;
+        }
+        .resultTab {
+            background-color: #333;
+            padding: 15px;
+            border-radius: 15px;
+            color: white;
+            font-weight: bold;
+            font-size: 24px;
+            display: none;
+            margin-top: 20px;
+            animation: fadeIn 1s ease-out;
+        }
+        .win {
+            background-color: green;
+        }
+        .lose {
+            background-color: red;
+        }
+        @keyframes fadeIn {
+            0% { opacity: 0; }
+            100% { opacity: 1; }
+        }
     </style>
 </head>
 <body>
     <div class="side-tab">Balance: <span id="balanceZL">0 ZL</span></div>
-    
+
     <div class="container" id="depositScreen">
-        <h1 style="font-size: 40px; font-weight: bold; text-shadow: 2px 2px 5px gold;">CASINO CHUUK</h1>
+        <h1 style="font-size: 40px; font-weight: bold;">CASINO CHUUK</h1>
         <p>Enter your deposit amount:</p>
         <input type="number" id="depositAmount" placeholder="Amount">
-        <button onclick="startGame()">Play</button>
+        <button onclick="goToMainPage()">Submit</button>
     </div>
-    
+
+    <div class="container" id="mainPage" style="display: none;">
+        <h1>Choose a Game</h1>
+        <button onclick="startGame('sixNumbers')">6 Numbers</button>
+        <button onclick="startGame('slots')">Slots</button>
+        <button onclick="startGame('guessingTiles')">Guessing Tiles</button>
+    </div>
+
     <div class="container" id="gameScreen" style="display: none;">
-        <h1>Pick 6 Numbers (1-50)</h1>
-        <div id="inputs"></div>
-        <button onclick="randomizeNumbers()">Submit</button>
+        <h1 id="gameTitle"></h1>
+        <div id="gameContent"></div>
+        <label for="betAmount">Choose your bet amount:</label>
+        <input type="number" id="betAmount" placeholder="Bet amount" min="1" />
+        <button onclick="playGame()" id="playButton">Play</button>
     </div>
-    
-    <div class="container" id="resultScreen" style="display: none;">
-        <h1>Result</h1>
-        <p id="resultText"></p>
-        <p id="currentBalance"></p>
-        <button onclick="cashOut()">Cash Out</button>
-    </div>
-    
-    <div class="container" id="cashOutScreen" style="display: none;">
-        <h1>Cash Out</h1>
-        <p>You won: <span id="cashOutAmount"></span></p>
-        <p>Card Number: <span class="hidden-card">**** **** **** 1234</span></p>
-        <button onclick="goBack()">Go Back</button>
-    </div>
-    
+
+    <div class="resultTab" id="resultTab" style="display: none;"></div>
+
     <script>
         let balanceZL = 0;
-        
-        function startGame() {
+        let gemPosition = null;
+        let betAmount = 0;
+        let currentGame = '';
+
+        function goToMainPage() {
             let deposit = parseInt(document.getElementById('depositAmount').value) || 0;
             if (deposit > 0) {
-                balanceZL += deposit * 4; // Treating as points
+                balanceZL += deposit * 4;
                 updateBalanceZL();
                 document.getElementById('depositScreen').style.display = 'none';
-                document.getElementById('gameScreen').style.display = 'block';
-                let inputsDiv = document.getElementById('inputs');
-                inputsDiv.innerHTML = '';
-                for (let i = 0; i < 6; i++) {
-                    inputsDiv.innerHTML += `<input type='number' id='num${i}' min='1' max='50' placeholder='${i + 1}'>`;
-                }
+                document.getElementById('mainPage').style.display = 'block';
             }
         }
 
-        function randomizeNumbers() {
+        function startGame(game) {
+            currentGame = game;
+            document.getElementById('mainPage').style.display = 'none';
+            document.getElementById('gameScreen').style.display = 'block';
+
+            document.getElementById('gameTitle').innerText = game === 'sixNumbers' ? 'Pick 6 Numbers (1-50)' : 
+                                                                 game === 'slots' ? 'Slots' : 'Guessing Tiles';
+            let inputsDiv = document.getElementById('gameContent');
+            inputsDiv.innerHTML = '';
+
+            if (game === 'sixNumbers') {
+                for (let i = 0; i < 6; i++) {
+                    inputsDiv.innerHTML += `<input type='number' id='num${i}' min='1' max='50' placeholder='${i + 1}'>`;
+                }
+            } else if (game === 'slots') {
+                inputsDiv.innerHTML = '<p id="slotResult">🎰 🎰 🎰</p>';
+            } else if (game === 'guessingTiles') {
+                for (let i = 0; i < 4; i++) {
+                    for (let j = 0; j < 4; j++) {
+                        inputsDiv.innerHTML += `<div class="tile" id="tile-${i}-${j}" onclick="guessTile(${i}, ${j})"></div>`;
+                    }
+                    inputsDiv.innerHTML += `<br/>`;
+                }
+            }
+
+            document.getElementById('playButton').style.display = 'inline';
+        }
+
+        function playGame() {
+            betAmount = parseInt(document.getElementById('betAmount').value) || 0;
+            if (betAmount <= 0) {
+                alert("Please enter a valid bet amount.");
+                return;
+            }
+
+            if (betAmount > balanceZL) {
+                alert("Not enough balance to make this bet.");
+                return;
+            }
+
+            balanceZL -= betAmount;
+            updateBalanceZL();
+            document.getElementById('playButton').disabled = true;
+
+            if (currentGame === 'sixNumbers') {
+                playSixNumbers();
+            } else if (currentGame === 'slots') {
+                playSlots();
+            } else if (currentGame === 'guessingTiles') {
+                playGuessingTiles();
+            }
+
+            setTimeout(() => {
+                document.getElementById('playButton').disabled = false;
+            }, 2000);
+        }
+
+        function playSixNumbers() {
             let userNumbers = [];
             for (let i = 0; i < 6; i++) {
                 userNumbers.push(parseInt(document.getElementById(`num${i}`).value) || 0);
             }
-            
             let randomNumbers = [];
             for (let i = 0; i < 6; i++) {
                 randomNumbers.push(Math.floor(Math.random() * 50) + 1);
             }
-            
-            document.getElementById('gameScreen').style.display = 'none';
-            document.getElementById('resultScreen').style.display = 'block';
-            
             let win = JSON.stringify(userNumbers.sort()) === JSON.stringify(randomNumbers.sort());
-            
+
             if (win) {
-                balanceZL *= 2;
-                document.getElementById('resultText').innerHTML = `You won! 🎉`;
+                balanceZL += betAmount * 2;
+                showResult('win', `You won! Your new balance: ${balanceZL} ZL`);
             } else {
-                balanceZL -= 10;
-                document.getElementById('resultText').innerHTML = `You lost. The numbers were: ${randomNumbers.join(', ')}`;
+                balanceZL -= betAmount;
+                showResult('lose', `You lost. The numbers were: ${randomNumbers.join(', ')}. New balance: ${balanceZL} ZL`);
             }
-            document.getElementById('currentBalance').innerHTML = `Current Balance: ${balanceZL} ZL`;
             updateBalanceZL();
         }
 
-        function cashOut() {
-            document.getElementById('resultScreen').style.display = 'none';
-            document.getElementById('cashOutScreen').style.display = 'block';
-            document.getElementById('cashOutAmount').innerText = `${balanceZL} ZL`;
+        function playSlots() {
+            if (betAmount > balanceZL) {
+                alert("Not enough balance for the bet.");
+                return;
+            }
+
+            let slotIcons = ['🍒', '🔔', '⭐', '💎', '7️⃣'];
+            let slotResults = [
+                slotIcons[Math.floor(Math.random() * slotIcons.length)],
+                slotIcons[Math.floor(Math.random() * slotIcons.length)],
+                slotIcons[Math.floor(Math.random() * slotIcons.length)]
+            ];
+            document.getElementById('slotResult').innerText = slotResults.join(' ');
+
+            if (slotResults[0] === slotResults[1] && slotResults[1] === slotResults[2]) {
+                balanceZL += betAmount * 10;
+                showResult('win', `Jackpot! You won ${betAmount * 10} ZL. New balance: ${balanceZL} ZL`);
+            } else {
+                balanceZL -= betAmount;
+                showResult('lose', `You lost ${betAmount} ZL. New balance: ${balanceZL} ZL`);
+            }
+            updateBalanceZL();
         }
 
-        function goBack() {
-            document.getElementById('cashOutScreen').style.display = 'none';
-            document.getElementById('gameScreen').style.display = 'block';
+        function playGuessingTiles() {
+            if (betAmount > balanceZL) {
+                alert("Not enough balance for the bet.");
+                return;
+            }
+
+            gemPosition = Math.floor(Math.random() * 16);
+            let tiles = document.querySelectorAll('.tile');
+            tiles.forEach(tile => tile.classList.remove('revealed'));
+
+            document.getElementById('playButton').disabled = true;
         }
-        
+
+        function guessTile(row, col) {
+            let tileIndex = row * 4 + col;
+            let tiles = document.querySelectorAll('.tile');
+            tiles[tileIndex].classList.add('revealed');
+
+            if (tileIndex === gemPosition) {
+                balanceZL += betAmount * 4;
+                showResult('win', `Congratulations! You found the gem. Your balance: ${balanceZL} ZL`);
+            } else {
+                balanceZL -= betAmount;
+                showResult('lose', `Sorry, try again. Your balance: ${balanceZL} ZL`);
+            }
+            updateBalanceZL();
+        }
+
+        function showResult(result, message) {
+            let resultTab = document.getElementById('resultTab');
+            resultTab.classList.add(result);
+            resultTab.innerText = message;
+            resultTab.style.display = 'block';
+
+            setTimeout(() => {
+                resultTab.style.display = 'none';
+            }, 3000);
+        }
+
         function updateBalanceZL() {
             document.getElementById('balanceZL').innerText = `${balanceZL} ZL`;
         }

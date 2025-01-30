@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CasinoCHUUK - The Ultimate Bet</title>
+    <style>
+        @keyframes flash {
+            0% { background-color: black; color: white; }
+            50% { background-color: gold; color: black; }
+            100% { background-color: black; color: white; }
+        }
+        body {
+            font-family: Arial, sans-serif;
+            background-color: black;
+            color: white;
+            text-align: center;
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            animation: flash 2s infinite;
+            position: relative;
+        }
+        .container {
+            width: 80%;
+            max-width: 500px;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            box-shadow: 0 0 15px rgba(255, 215, 0, 0.8);
+        }
+        input, button {
+            padding: 15px;
+            margin: 10px;
+            font-size: 20px;
+            border-radius: 10px;
+            border: none;
+            width: 80%;
+        }
+        button {
+            background-color: gold;
+            color: black;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        button:hover {
+            background-color: white;
+        }
+        .hidden-card {
+            background-color: black;
+            color: black;
+            padding: 5px;
+            border-radius: 5px;
+            display: inline-block;
+        }
+        .side-tab {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(255, 215, 0, 0.8);
+            padding: 15px;
+            border-radius: 10px;
+            font-weight: bold;
+            color: limegreen;
+        }
+    </style>
+</head>
+<body>
+    <div class="side-tab">Balance: <span id="balanceZL">0 ZL</span></div>
+    
+    <div class="container" id="depositScreen">
+        <h1 style="font-size: 40px; font-weight: bold; text-shadow: 2px 2px 5px gold;">CASINO CHUUK</h1>
+        <p>Enter your deposit amount:</p>
+        <input type="number" id="depositAmount" placeholder="Amount">
+        <button onclick="startGame()">Play</button>
+    </div>
+    
+    <div class="container" id="gameScreen" style="display: none;">
+        <h1>Pick 6 Numbers (1-50)</h1>
+        <div id="inputs"></div>
+        <button onclick="randomizeNumbers()">Submit</button>
+    </div>
+    
+    <div class="container" id="resultScreen" style="display: none;">
+        <h1>Result</h1>
+        <p id="resultText"></p>
+        <p id="currentBalance"></p>
+        <button onclick="cashOut()">Cash Out</button>
+    </div>
+    
+    <div class="container" id="cashOutScreen" style="display: none;">
+        <h1>Cash Out</h1>
+        <p>You won: <span id="cashOutAmount"></span></p>
+        <p>Card Number: <span class="hidden-card">**** **** **** 1234</span></p>
+        <button onclick="goBack()">Go Back</button>
+    </div>
+    
+    <script>
+        let balanceZL = 0;
+        
+        function startGame() {
+            let deposit = parseInt(document.getElementById('depositAmount').value) || 0;
+            if (deposit > 0) {
+                balanceZL += deposit * 4; // Treating as points
+                updateBalanceZL();
+                document.getElementById('depositScreen').style.display = 'none';
+                document.getElementById('gameScreen').style.display = 'block';
+                let inputsDiv = document.getElementById('inputs');
+                inputsDiv.innerHTML = '';
+                for (let i = 0; i < 6; i++) {
+                    inputsDiv.innerHTML += `<input type='number' id='num${i}' min='1' max='50' placeholder='${i + 1}'>`;
+                }
+            }
+        }
+
+        function randomizeNumbers() {
+            let userNumbers = [];
+            for (let i = 0; i < 6; i++) {
+                userNumbers.push(parseInt(document.getElementById(`num${i}`).value) || 0);
+            }
+            
+            let randomNumbers = [];
+            for (let i = 0; i < 6; i++) {
+                randomNumbers.push(Math.floor(Math.random() * 50) + 1);
+            }
+            
+            document.getElementById('gameScreen').style.display = 'none';
+            document.getElementById('resultScreen').style.display = 'block';
+            
+            let win = JSON.stringify(userNumbers.sort()) === JSON.stringify(randomNumbers.sort());
+            
+            if (win) {
+                balanceZL *= 2;
+                document.getElementById('resultText').innerHTML = `You won! 🎉`;
+            } else {
+                balanceZL -= 10;
+                document.getElementById('resultText').innerHTML = `You lost. The numbers were: ${randomNumbers.join(', ')}`;
+            }
+            document.getElementById('currentBalance').innerHTML = `Current Balance: ${balanceZL} ZL`;
+            updateBalanceZL();
+        }
+
+        function cashOut() {
+            document.getElementById('resultScreen').style.display = 'none';
+            document.getElementById('cashOutScreen').style.display = 'block';
+            document.getElementById('cashOutAmount').innerText = `${balanceZL} ZL`;
+        }
+
+        function goBack() {
+            document.getElementById('cashOutScreen').style.display = 'none';
+            document.getElementById('gameScreen').style.display = 'block';
+        }
+        
+        function updateBalanceZL() {
+            document.getElementById('balanceZL').innerText = `${balanceZL} ZL`;
+        }
+    </script>
+</body>
+</html>
